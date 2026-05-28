@@ -11,7 +11,7 @@ from typing import Literal
 import torch
 import tyro
 
-from mjlab.envs import ManagerBasedRlEnv
+from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg
 from mjlab.rl import MjlabOnPolicyRunner, RslRlVecEnvWrapper
 from mjlab.scripts._cli import maybe_print_top_level_help
 from mjlab.tasks.registry import list_tasks, load_env_cfg, load_rl_cfg, load_runner_cls
@@ -32,6 +32,7 @@ def _parse_wandb_dt(value: str | datetime) -> datetime:
 
 @dataclass(frozen=True)
 class PlayConfig:
+  env: ManagerBasedRlEnvCfg
   agent: Literal["zero", "random", "trained"] = "trained"
   registry_name: str | None = None
   wandb_run_path: str | None = None
@@ -39,24 +40,22 @@ class PlayConfig:
   """Optional checkpoint name within the W&B run to load (e.g. 'model_4000.pt')."""
   checkpoint_file: str | None = None
   motion_file: str | None = None
-  num_envs: int | None = None
   device: str | None = None
   video: bool = False
   video_length: int = 200
-  video_height: int | None = None
-  video_width: int | None = None
   camera: int | str | None = None
   viewer: Literal["auto", "native", "viser"] = "auto"
   no_terminations: bool = False
   """Disable all termination conditions (useful for viewing motions with dummy agents)."""
-  sim_backend: str | None = None
-  """Override the simulation backend ("mjwarp", "mujoco", "mujoco_with_kinematics", or a registered
-  backend name). If None, uses the task's default."""
   log_root: str = "logs/rsl_rl"
   """Root directory under which experiment logs are written."""
 
   # Internal flag used by demo script.
   _demo_mode: tyro.conf.Suppress[bool] = False
+
+  @staticmethod
+  def from_task(task_id: str) -> "PlayConfig":
+    return PlayConfig(env=load_env_cfg(task_id, play=True))
 
 
 def run_play(task_id: str, cfg: PlayConfig):
@@ -64,7 +63,7 @@ def run_play(task_id: str, cfg: PlayConfig):
 
   device = cfg.device or ("cuda:0" if torch.cuda.is_available() else "cpu")
 
-  env_cfg = load_env_cfg(task_id, play=True)
+  env_cfg = cfg.env
   agent_cfg = load_rl_cfg(task_id)
 
   DUMMY_MODE = cfg.agent in {"zero", "random"}
@@ -157,15 +156,6 @@ def run_play(task_id: str, cfg: PlayConfig):
         f"[INFO]: Loading checkpoint: {checkpoint_name} (run: {run_id}, {cached_str})"
       )
     log_dir = resume_path.parent
-
-  if cfg.sim_backend is not None:
-    env_cfg.sim.backend = cfg.sim_backend
-  if cfg.num_envs is not None:
-    env_cfg.scene.num_envs = cfg.num_envs
-  if cfg.video_height is not None:
-    env_cfg.viewer.height = cfg.video_height
-  if cfg.video_width is not None:
-    env_cfg.viewer.width = cfg.video_width
 
   render_mode = "rgb_array" if (TRAINED_MODE and cfg.video) else None
   if cfg.video and DUMMY_MODE:
@@ -323,7 +313,7 @@ def main():
   args = tyro.cli(
     PlayConfig,
     args=remaining_args,
-    default=PlayConfig(),
+    default=PlayConfig.from_task(chosen_task),
     prog=sys.argv[0] + f" {chosen_task}",
     config=mjlab.TYRO_FLAGS,
   )
