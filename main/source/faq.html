@@ -59,7 +59,7 @@
     <link rel="prev" title="Migrating from Isaac Lab" href="migration_isaac_lab.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="May 12, 2026"/>
+    <meta name="docbuild:last-update" content="Aug 03, 2026"/>
   </head>
   
   
@@ -472,6 +472,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#does-it-work-on-macos">Does it work on macOS?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#does-it-work-on-windows">Does it work on Windows?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cuda-compatibility">CUDA Compatibility</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-run-on-cpu-without-touching-the-gpu">How do I run on CPU without touching the GPU?</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a><ul class="visible nav section-nav flex-column">
@@ -561,6 +562,22 @@ for details on CUDA compatibility.</p></li>
 <li><p><strong>Recommended</strong>: CUDA <strong>12.4+</strong> (for conditional execution support in CUDA
 graphs).</p></li>
 </ul>
+</section>
+<section id="how-do-i-run-on-cpu-without-touching-the-gpu">
+<h3>How do I run on CPU without touching the GPU?<a class="headerlink" href="#how-do-i-run-on-cpu-without-touching-the-gpu" title="Link to this heading">#</a></h3>
+<p>Passing <code class="docutils literal notranslate"><span class="pre">device=&quot;cpu&quot;</span></code> puts all mjlab computation on the CPU, but it does
+<strong>not</strong> stop Warp from initializing the GPU. The first time Warp’s runtime
+comes up, it eagerly enumerates and creates a CUDA context on <strong>every</strong>
+visible device, regardless of which device you requested. So on a machine
+with a visible GPU, a <code class="docutils literal notranslate"><span class="pre">device=&quot;cpu&quot;</span></code> run still claims VRAM.</p>
+<p>This happens inside Warp and cannot be prevented from Python once the
+package is imported. To keep the process entirely off the GPU, hide the
+devices from CUDA before launching:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>train.py<span class="w"> </span>...
+</pre></div>
+</div>
+<p>With no visible CUDA devices, Warp initializes CPU-only and never allocates
+on the GPU. See <a class="reference external" href="https://github.com/mujocolab/mjlab/issues/949">issue #949</a> for background.</p>
 </section>
 </section>
 <section id="performance">
@@ -738,7 +755,7 @@ scenes by attaching entity specs into a parent scene spec using
 the child to the parent. This is a MuJoCo design decision: there is no
 sensible way to merge engine options (timestep, gravity, solver settings,
 etc.) across multiple attached models.</p>
-<p>To configure simulation options, use <a class="reference internal" href="api/sim.html#mjlab.sim.MujocoCfg" title="mjlab.sim.sim.MujocoCfg"><code class="xref py py-class docutils literal notranslate"><span class="pre">MujocoCfg</span></code></a> in
+<p>To configure simulation options, use <code class="xref py py-class docutils literal notranslate"><span class="pre">MujocoCfg</span></code> in
 your task’s Python config:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.sim.sim</span><span class="w"> </span><span class="kn">import</span> <span class="n">MujocoCfg</span><span class="p">,</span> <span class="n">SimulationCfg</span>
 
@@ -1045,6 +1062,7 @@ being worked on.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#does-it-work-on-macos">Does it work on macOS?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#does-it-work-on-windows">Does it work on Windows?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cuda-compatibility">CUDA Compatibility</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-run-on-cpu-without-touching-the-gpu">How do I run on CPU without touching the GPU?</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a><ul class="visible nav section-nav flex-column">
@@ -1119,7 +1137,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on May 12, 2026.
+  Last updated on Aug 03, 2026.
   <br/>
 </p>
   </div>

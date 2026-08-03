@@ -61,7 +61,7 @@
     <link rel="prev" title="Events" href="events.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="May 12, 2026"/>
+    <meta name="docbuild:last-update" content="Aug 03, 2026"/>
   </head>
   
   
@@ -619,6 +619,11 @@ and <code class="docutils literal notranslate"><span class="pre">dr.body_ipos</s
 <td><p>Geom-specific size parameters (radius, half-lengths, etc.)</p></td>
 <td><p>Automatically recomputes <code class="docutils literal notranslate"><span class="pre">geom_rbound</span></code> and <code class="docutils literal notranslate"><span class="pre">geom_aabb</span></code></p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dr.geom_matid</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">geom_matid</span></code></p></td>
+<td><p>Which baked material the geom renders with</p></td>
+<td><p>Samples uniformly from <code class="docutils literal notranslate"><span class="pre">asset_cfg.material_names</span></code></p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -805,6 +810,36 @@ triggers <code class="docutils literal notranslate"><span class="pre">set_const_
 <td><p>Light direction vector</p></td>
 <td></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dr.light_diffuse</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">light_diffuse</span></code></p></td>
+<td><p>Diffuse RGB color</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dr.light_specular</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">light_specular</span></code></p></td>
+<td><p>Specular RGB color</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dr.light_ambient</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">light_ambient</span></code></p></td>
+<td><p>Ambient RGB color</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dr.light_attenuation</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">light_attenuation</span></code></p></td>
+<td><p>Constant, linear, and quadratic attenuation coefficients</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dr.light_cutoff</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">light_cutoff</span></code></p></td>
+<td><p>Spot light half-cone angle in degrees</p></td>
+<td><p>Ignored for directional lights</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dr.light_exponent</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">light_exponent</span></code></p></td>
+<td><p>Spot light angular falloff exponent</p></td>
+<td><p>Ignored for directional lights</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -828,6 +863,26 @@ triggers <code class="docutils literal notranslate"><span class="pre">set_const_
 <td><p><code class="docutils literal notranslate"><span class="pre">mat_rgba</span></code></p></td>
 <td><p>Material RGBA color (tints textures)</p></td>
 <td></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dr.mat_emission</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mat_emission</span></code></p></td>
+<td><p>Self-illumination multiplier</p></td>
+<td><p>Used by MuJoCo Warp RGB rendering</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dr.mat_specular</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mat_specular</span></code></p></td>
+<td><p>Specular reflection strength in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code></p></td>
+<td><p>Scales the MuJoCo Warp RGB specular component</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dr.mat_shininess</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mat_shininess</span></code></p></td>
+<td><p>Surface shininess in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code></p></td>
+<td><p>Used by MuJoCo Warp RGB rendering</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dr.mat_texrepeat</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mat_texrepeat</span></code></p></td>
+<td><p>Texture repeat in the S/T directions</p></td>
+<td><p>Only affects textured materials; values should stay positive</p></td>
 </tr>
 </tbody>
 </table>
@@ -1408,12 +1463,6 @@ do not have one yet. They will be added as demand arises.</p>
 <code class="docutils literal notranslate"><span class="pre">actuator_ctrlrange</span></code>, <code class="docutils literal notranslate"><span class="pre">actuator_actrange</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">pd_gains</span></code> and <code class="docutils literal notranslate"><span class="pre">effort_limits</span></code> cover common cases.</p></td>
 </tr>
-<tr class="row-even"><td><p>Material</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">mat_texrepeat</span></code></p></td>
-<td><p>Continuous per-world field. Material-level entity indexing
-is now supported (see <code class="docutils literal notranslate"><span class="pre">dr.mat_rgba</span></code>), but <code class="docutils literal notranslate"><span class="pre">dr.mat_texrepeat</span></code>
-is not yet implemented.</p></td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -1483,10 +1532,11 @@ per-environment values.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Material / texture swapping</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">geom_matid</span></code>, <code class="docutils literal notranslate"><span class="pre">mat_texid</span></code></p></td>
-<td><p>Integer IDs that need a swapping API, not continuous
-sampling. Requires material-level entity indexing.</p></td>
+<tr class="row-even"><td><p>Texture-role swapping</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mat_texid</span></code></p></td>
+<td><p>Not implemented for now because mujoco’s viewer doesn’t reread
+<code class="docutils literal notranslate"><span class="pre">mat_texid</span></code> after context creation; use <code class="docutils literal notranslate"><span class="pre">geom_matid</span></code> with one baked
+material per texture to randomize textures instead.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Mesh</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">mesh_vert</span></code>, <code class="docutils literal notranslate"><span class="pre">mesh_normal</span></code>, <code class="docutils literal notranslate"><span class="pre">mesh_face</span></code>, etc.</p></td>
@@ -1717,9 +1767,11 @@ friction. MuJoCo will use the higher-priority geom’s friction in
 
 <span class="n">robot_collision</span> <span class="o">=</span> <span class="n">CollisionCfg</span><span class="p">(</span>
     <span class="n">geom_names_expr</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;.*_foot.*&quot;</span><span class="p">],</span>
+    <span class="n">contype</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">conaffinity</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">condim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
     <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">friction</span><span class="o">=</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,),</span>
-    <span class="n">condim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1894,7 +1946,8 @@ automatically.</p>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">set_const_0</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">dof_invweight0</span></code>, <code class="docutils literal notranslate"><span class="pre">body_invweight0</span></code>, <code class="docutils literal notranslate"><span class="pre">tendon_length0</span></code>,
-<code class="docutils literal notranslate"><span class="pre">tendon_invweight0</span></code>, plus camera and light references</p></td>
+<code class="docutils literal notranslate"><span class="pre">tendon_invweight0</span></code>, <code class="docutils literal notranslate"><span class="pre">actuator_acc0</span></code>, plus camera and light
+references</p></td>
 <td><p>After changing <code class="docutils literal notranslate"><span class="pre">dof_armature</span></code>, <code class="docutils literal notranslate"><span class="pre">tendon_armature</span></code>,
 <code class="docutils literal notranslate"><span class="pre">body_inertia</span></code>, <code class="docutils literal notranslate"><span class="pre">body_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">body_quat</span></code>, or <code class="docutils literal notranslate"><span class="pre">qpos0</span></code></p></td>
 </tr>
@@ -1973,15 +2026,19 @@ logic:</p>
 <code class="docutils literal notranslate"><span class="pre">MjModel</span></code> before each render. All of MuJoCo’s built-in visualization
 toggles then work correctly against the randomized model:</p>
 <ul class="simple">
-<li><p>Geom appearance (<code class="docutils literal notranslate"><span class="pre">geom_rgba</span></code>, <code class="docutils literal notranslate"><span class="pre">geom_size</span></code>, <code class="docutils literal notranslate"><span class="pre">geom_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">geom_quat</span></code>)</p></li>
-<li><p>Material color (<code class="docutils literal notranslate"><span class="pre">mat_rgba</span></code>): tints textured surfaces</p></li>
+<li><p>Geom appearance (<code class="docutils literal notranslate"><span class="pre">geom_rgba</span></code>, <code class="docutils literal notranslate"><span class="pre">geom_size</span></code>, <code class="docutils literal notranslate"><span class="pre">geom_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">geom_quat</span></code>,
+<code class="docutils literal notranslate"><span class="pre">geom_matid</span></code>)</p></li>
+<li><p>Material appearance (<code class="docutils literal notranslate"><span class="pre">mat_rgba</span></code>, <code class="docutils literal notranslate"><span class="pre">mat_emission</span></code>, <code class="docutils literal notranslate"><span class="pre">mat_specular</span></code>,
+<code class="docutils literal notranslate"><span class="pre">mat_shininess</span></code>, <code class="docutils literal notranslate"><span class="pre">mat_texrepeat</span></code>)</p></li>
 <li><p>Body and site poses (<code class="docutils literal notranslate"><span class="pre">body_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">body_quat</span></code>, <code class="docutils literal notranslate"><span class="pre">body_ipos</span></code>,
 <code class="docutils literal notranslate"><span class="pre">site_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">site_quat</span></code>)</p></li>
 <li><p>Inertia (<code class="docutils literal notranslate"><span class="pre">body_inertia</span></code>, <code class="docutils literal notranslate"><span class="pre">body_iquat</span></code>, <code class="docutils literal notranslate"><span class="pre">body_mass</span></code>): press <code class="docutils literal notranslate"><span class="pre">I</span></code>
 to toggle inertia boxes</p></li>
 <li><p>Camera parameters (<code class="docutils literal notranslate"><span class="pre">cam_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">cam_quat</span></code>, <code class="docutils literal notranslate"><span class="pre">cam_fovy</span></code>,
 <code class="docutils literal notranslate"><span class="pre">cam_intrinsic</span></code>): press <code class="docutils literal notranslate"><span class="pre">Q</span></code> to toggle camera frustums</p></li>
-<li><p>Lights (<code class="docutils literal notranslate"><span class="pre">light_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">light_dir</span></code>)</p></li>
+<li><p>Lights (<code class="docutils literal notranslate"><span class="pre">light_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">light_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">light_diffuse</span></code>, <code class="docutils literal notranslate"><span class="pre">light_specular</span></code>,
+<code class="docutils literal notranslate"><span class="pre">light_ambient</span></code>, <code class="docutils literal notranslate"><span class="pre">light_attenuation</span></code>, <code class="docutils literal notranslate"><span class="pre">light_cutoff</span></code>,
+<code class="docutils literal notranslate"><span class="pre">light_exponent</span></code>)</p></li>
 </ul>
 <div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
 <div class="sd-row sd-row-cols-2 sd-row-cols-xs-2 sd-row-cols-sm-2 sd-row-cols-md-2 sd-row-cols-lg-2 docutils">
@@ -2170,7 +2227,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on May 12, 2026.
+  Last updated on Aug 03, 2026.
   <br/>
 </p>
   </div>

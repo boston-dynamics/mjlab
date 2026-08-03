@@ -59,7 +59,7 @@
     <link rel="prev" title="API Reference" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="May 12, 2026"/>
+    <meta name="docbuild:last-update" content="Aug 03, 2026"/>
   </head>
   
   
@@ -759,7 +759,47 @@ algorithms that expect unscaled reward signals (e.g., HER, static reward scaling
 <dl class="py data">
 <dt class="sig sig-object py" id="mjlab.envs.VecEnvObs">
 <span class="sig-prename descclassname"><span class="pre">mjlab.envs.</span></span><span class="sig-name descname"><span class="pre">VecEnvObs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mjlab.envs.VecEnvObs" title="Link to this definition">#</a></dt>
-<dd><p>alias of <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code> | <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]]</p>
+<dd><p>The type of parameterized generics.</p>
+<p>That is, for example, <cite>type(List[int])</cite> is <cite>_GenericAlias</cite>.</p>
+<p>Objects which are instances of this class include:
+* Parameterized container types, e.g. <cite>Tuple[int]</cite>, <cite>List[int]</cite>.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Note that native container types, e.g. <cite>tuple</cite>, <cite>list</cite>, use
+<cite>types.GenericAlias</cite> instead.</p></li>
+</ul>
+</div></blockquote>
+<ul>
+<li><dl class="simple">
+<dt>Parameterized classes:</dt><dd><p>class C[T]: pass
+# C[int] is a _GenericAlias</p>
+</dd>
+</dl>
+</li>
+<li><p><cite>Callable</cite> aliases, generic <cite>Callable</cite> aliases, and
+parameterized <cite>Callable</cite> aliases:</p>
+<blockquote>
+<div><p>T = TypeVar(‘T’)
+# _CallableGenericAlias inherits from _GenericAlias.
+A = Callable[[], None]  # _CallableGenericAlias
+B = Callable[[T], None]  # _CallableGenericAlias
+C = B[int]  # _CallableGenericAlias</p>
+</div></blockquote>
+</li>
+<li><dl class="simple">
+<dt>Parameterized <cite>Final</cite>, <cite>ClassVar</cite>, <cite>TypeForm</cite>, <cite>TypeGuard</cite>, and <cite>TypeIs</cite>:</dt><dd><p># All _GenericAlias
+Final[int]
+ClassVar[float]
+TypeForm[bytearray]
+TypeGuard[bool]
+TypeIs[range]</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Note that instances of this class are not classes (e.g by <cite>inspect.isclass</cite>),
+even though they behave like them.</p>
+<p>alias of <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code> | <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]]</p>
 </dd></dl>
 
 </section>
@@ -899,7 +939,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on May 12, 2026.
+  Last updated on Aug 03, 2026.
   <br/>
 </p>
   </div>

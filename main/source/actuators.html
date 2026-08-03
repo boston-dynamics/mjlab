@@ -59,7 +59,7 @@
     <link rel="prev" title="Heterogeneous Worlds" href="entity/per_world_mesh.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="May 12, 2026"/>
+    <meta name="docbuild:last-update" content="Aug 03, 2026"/>
   </head>
   
   
@@ -542,6 +542,7 @@ latency.</p>
 MuJoCo’s integrator handles velocity-dependent forces.</p>
 <p><strong>Built-in actuators</strong> (<code class="docutils literal notranslate"><span class="pre">BuiltinPositionActuator</span></code>,
 <code class="docutils literal notranslate"><span class="pre">BuiltinVelocityActuator</span></code>, <code class="docutils literal notranslate"><span class="pre">BuiltinMotorActuator</span></code>,
+<code class="docutils literal notranslate"><span class="pre">BuiltinPdActuator</span></code>, <code class="docutils literal notranslate"><span class="pre">BuiltinDcMotorActuator</span></code>,
 <code class="docutils literal notranslate"><span class="pre">BuiltinMuscleActuator</span></code>) create native MuJoCo actuator elements in the
 MjSpec. The physics engine computes the control law and integrates
 velocity-dependent damping forces implicitly. This provides the best
@@ -590,6 +591,29 @@ control.</p>
 control.</p>
 <p><strong>BuiltinMotorActuator</strong>: Creates <code class="docutils literal notranslate"><span class="pre">&lt;motor&gt;</span></code> actuators for direct torque
 control.</p>
+<p><strong>BuiltinPdActuator</strong>: Native PD that closes on both a position and a
+velocity target, implemented as paired <code class="docutils literal notranslate"><span class="pre">&lt;position&gt;</span></code> + <code class="docutils literal notranslate"><span class="pre">&lt;velocity&gt;</span></code>
+actuators summing to <code class="docutils literal notranslate"><span class="pre">kp</span> <span class="pre">*</span> <span class="pre">(p_target</span> <span class="pre">-</span> <span class="pre">q)</span> <span class="pre">+</span> <span class="pre">kd</span> <span class="pre">*</span> <span class="pre">(v_target</span> <span class="pre">-</span> <span class="pre">qdot)</span></code>.
+<code class="docutils literal notranslate"><span class="pre">BuiltinPositionActuator</span></code> puts kd on the <code class="docutils literal notranslate"><span class="pre">&lt;position&gt;</span></code> element and
+implicitly assumes a zero velocity reference; use this when the policy
+emits a non-zero velocity target. Native delivery lets
+<code class="docutils literal notranslate"><span class="pre">implicit</span></code> / <code class="docutils literal notranslate"><span class="pre">implicitfast</span></code> see the kd term in their velocity update,
+unlike <code class="docutils literal notranslate"><span class="pre">IdealPdActuator</span></code> which forwards Python-computed torque through
+an opaque <code class="docutils literal notranslate"><span class="pre">&lt;motor&gt;</span></code>.</p>
+<p><strong>BuiltinDcMotorActuator</strong>: Wraps MuJoCo’s native
+<a class="reference external" href="https://mujoco.readthedocs.io/en/stable/XMLreference.html#actuator-dcmotor">&lt;dcmotor&gt;</a>
+element. Torque is <code class="docutils literal notranslate"><span class="pre">tau</span> <span class="pre">=</span> <span class="pre">K</span> <span class="pre">*</span> <span class="pre">(V</span> <span class="pre">-</span> <span class="pre">K</span> <span class="pre">*</span> <span class="pre">omega)</span> <span class="pre">/</span> <span class="pre">R</span></code>; the back-EMF runs
+through the native bias path, so <code class="docutils literal notranslate"><span class="pre">implicit</span></code> / <code class="docutils literal notranslate"><span class="pre">implicitfast</span></code> pick up
+its velocity derivative as effective damping. Three input modes pick what
+<code class="docutils literal notranslate"><span class="pre">ctrl</span></code> carries: VOLTAGE drives the motor directly; POSITION / VELOCITY
+close an internal PID (with anti-windup and slew limiting) against a
+single setpoint, whose Vmax-clamped output becomes torque. POSITION mode
+pins v_target = 0 (the kd term acts on raw velocity). Optional physics:
+inductance,
+thermal model with I^2R heating, cogging ripple, LuGre friction.
+<code class="docutils literal notranslate"><span class="pre">DcMotorActuator</span></code> (the explicit version) is a software PD with a
+velocity-dependent torque clamp on top of a <code class="docutils literal notranslate"><span class="pre">&lt;motor&gt;</span></code>; this is the real
+electrical model.</p>
 <p><strong>BuiltinMuscleActuator</strong>: Creates <code class="docutils literal notranslate"><span class="pre">&lt;muscle&gt;</span></code> actuators for
 biologically-inspired muscle dynamics with force-length-velocity
 characteristics.</p>
@@ -980,7 +1004,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on May 12, 2026.
+  Last updated on Aug 03, 2026.
   <br/>
 </p>
   </div>
