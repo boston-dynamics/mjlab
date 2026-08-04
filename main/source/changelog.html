@@ -571,12 +571,32 @@ their size from the image. Contribution by &#64;bd-pmorais.</p></li>
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">reduce=&quot;sum&quot;</span></code> to <code class="docutils literal notranslate"><span class="pre">MetricsTermCfg</span></code> for reporting the accumulated
 episode total (e.g. episodic reward, total distance traveled) instead of a
 per-step average. Contribution by &#64;bd-mlutter</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">ViewerConfig.geom_group</span></code> and <code class="docutils literal notranslate"><span class="pre">ViewerConfig.site_group</span></code> to control
+which MuJoCo geom and site visualization groups the offscreen renderer draws.
+Both default to <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">0)</span></code>, matching the previous behavior.
+Contribution by &#64;bd-mlutter</p></li>
 </ul>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Bumped <code class="docutils literal notranslate"><span class="pre">rsl-rl-lib</span></code> from 5.4.0 to 5.4.2.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ViewerConfig</span></code> is now keyword-only. Its fields were reordered into semantic
+groups (general options, camera placement, then origin-type-specific fields),
+so positional construction is no longer supported.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ViewerConfig.fovy</span></code> now applies to every <code class="docutils literal notranslate"><span class="pre">origin_type</span></code>. It was previously
+ignored for the tracking cameras (<code class="docutils literal notranslate"><span class="pre">ASSET_ROOT</span></code> / <code class="docutils literal notranslate"><span class="pre">ASSET_BODY</span></code>); set
+<code class="docutils literal notranslate"><span class="pre">fovy</span> <span class="pre">=</span> <span class="pre">None</span></code> to keep the model default.</p></li>
+<li><p>With <code class="docutils literal notranslate"><span class="pre">origin_type</span></code> of <code class="docutils literal notranslate"><span class="pre">AUTO</span></code> or <code class="docutils literal notranslate"><span class="pre">WORLD</span></code>, the extra environments selected
+by <code class="docutils literal notranslate"><span class="pre">ViewerConfig.max_extra_envs</span></code> are now the ones closest to <code class="docutils literal notranslate"><span class="pre">lookat</span></code>
+rather than the ones closest to <code class="docutils literal notranslate"><span class="pre">env_idx</span></code>. Tracking cameras
+(<code class="docutils literal notranslate"><span class="pre">ASSET_ROOT</span></code> / <code class="docutils literal notranslate"><span class="pre">ASSET_BODY</span></code>) still select neighbors around <code class="docutils literal notranslate"><span class="pre">env_idx</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ViewerConfig.max_extra_envs</span></code> now raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when it is
+negative or when it requests more environments than the simulation has,
+instead of being silently clamped.</p></li>
+<li><p>The offscreen renderer copies the <code class="docutils literal notranslate"><span class="pre">MjModel</span></code> instead of mutating a shared
+model. Therefore the options <code class="docutils literal notranslate"><span class="pre">enable_shadows</span></code>, <code class="docutils literal notranslate"><span class="pre">enable_reflections</span></code> and
+<code class="docutils literal notranslate"><span class="pre">extent</span></code> are local to the <code class="docutils literal notranslate"><span class="pre">OffscreenRenderer</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">CollisionCfg</span></code> and <code class="docutils literal notranslate"><span class="pre">GeomCfg</span></code> now share one write path, and mjlab warns
 when a <code class="docutils literal notranslate"><span class="pre">GeomCfg</span></code> collision patch is overwritten by a <code class="docutils literal notranslate"><span class="pre">CollisionCfg</span></code>.</p></li>
 <li><p>Changed the default MuJoCo Warp render background to solid black
