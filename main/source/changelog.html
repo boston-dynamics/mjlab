@@ -58,7 +58,7 @@
     <link rel="prev" title="Research" href="research.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Aug 03, 2026"/>
+    <meta name="docbuild:last-update" content="Aug 04, 2026"/>
   </head>
   
   
@@ -560,9 +560,17 @@ attributes; unset attributes are left untouched. Contribution by
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">diffuse</span></code>, <code class="docutils literal notranslate"><span class="pre">specular</span></code>, <code class="docutils literal notranslate"><span class="pre">ambient</span></code>, <code class="docutils literal notranslate"><span class="pre">active</span></code>, and
 <code class="docutils literal notranslate"><span class="pre">attenuation</span></code> fields to <code class="docutils literal notranslate"><span class="pre">LightCfg</span></code> for configuring light color and
 falloff. Contribution by &#64;bd-pmorais.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">random</span></code>, <code class="docutils literal notranslate"><span class="pre">file</span></code>, <code class="docutils literal notranslate"><span class="pre">cubefiles</span></code>, <code class="docutils literal notranslate"><span class="pre">gridsize</span></code>, <code class="docutils literal notranslate"><span class="pre">gridlayout</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nchannel</span></code>, <code class="docutils literal notranslate"><span class="pre">hflip</span></code>, and <code class="docutils literal notranslate"><span class="pre">vflip</span></code> fields to <code class="docutils literal notranslate"><span class="pre">TextureCfg</span></code>, so textures
+can be loaded from image files instead of only built-in patterns.
+<code class="docutils literal notranslate"><span class="pre">width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code> are now optional, since file-based textures take
+their size from the image. Contribution by &#64;bd-pmorais.</p></li>
 <li><p>Added light domain randomization functions: <code class="docutils literal notranslate"><span class="pre">dr.light_diffuse</span></code>,
 <code class="docutils literal notranslate"><span class="pre">dr.light_specular</span></code>, <code class="docutils literal notranslate"><span class="pre">dr.light_ambient</span></code>, <code class="docutils literal notranslate"><span class="pre">dr.light_attenuation</span></code>,
 <code class="docutils literal notranslate"><span class="pre">dr.light_cutoff</span></code>, and <code class="docutils literal notranslate"><span class="pre">dr.light_exponent</span></code>. Contribution by &#64;bd-pmorais.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">reduce=&quot;sum&quot;</span></code> to <code class="docutils literal notranslate"><span class="pre">MetricsTermCfg</span></code> for reporting the accumulated
+episode total (e.g. episodic reward, total distance traveled) instead of a
+per-step average. Contribution by &#64;bd-mlutter</p></li>
 </ul>
 </section>
 <section id="changed">
@@ -1632,7 +1640,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on Aug 03, 2026.
+  Last updated on Aug 04, 2026.
   <br/>
 </p>
   </div>
