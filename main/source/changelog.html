@@ -58,7 +58,7 @@
     <link rel="prev" title="Research" href="research.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Aug 05, 2026"/>
+    <meta name="docbuild:last-update" content="Aug 27, 2026"/>
   </head>
   
   
@@ -467,7 +467,8 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upcoming-version-not-yet-released">Upcoming version (not yet released)</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upcoming-version-not-yet-released">Upcoming version (not yet released)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-1-6-0-august-8-2026">Version 1.6.0 (August 8, 2026)</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed">Changed</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
@@ -540,6 +541,9 @@ document.write(`
 <h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
 <section id="upcoming-version-not-yet-released">
 <h2>Upcoming version (not yet released)<a class="headerlink" href="#upcoming-version-not-yet-released" title="Link to this heading">#</a></h2>
+</section>
+<section id="version-1-6-0-august-8-2026">
+<h2>Version 1.6.0 (August 8, 2026)<a class="headerlink" href="#version-1-6-0-august-8-2026" title="Link to this heading">#</a></h2>
 <div class="attention admonition">
 <p class="admonition-title">Breaking API changes</p>
 <ul class="simple">
@@ -547,6 +551,21 @@ document.write(`
 and <code class="docutils literal notranslate"><span class="pre">priority</span></code> to be explicit instead of silently defaulting to
 MuJoCo’s values, and dict values for these fields must cover every
 matched geom (add a catch-all <code class="docutils literal notranslate"><span class="pre">&quot;.*&quot;</span></code> entry).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CommandTerm._update_command</span></code> now takes an <code class="docutils literal notranslate"><span class="pre">env_ids</span></code> argument:
+<code class="docutils literal notranslate"><span class="pre">None</span></code> on the regular per-step update and the reset environment ids
+when called from <code class="docutils literal notranslate"><span class="pre">reset()</span></code>. Custom command terms must add the
+parameter (construction raises a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code> with migration
+instructions otherwise) and scope any per-step state advance, such as
+a motion frame index, to <code class="docutils literal notranslate"><span class="pre">env_ids</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ViewerConfig</span></code> is now keyword-only; positional construction no
+longer works.</p></li>
+</ul>
+</div>
+<div class="note admonition">
+<p class="admonition-title">Highlights</p>
+<ul class="simple">
+<li><p>Upgraded to MuJoCo and MuJoCo Warp 3.11.</p></li>
+<li><p>Upgraded <code class="docutils literal notranslate"><span class="pre">rsl-rl-lib</span></code> to 5.4.2.</p></li>
 </ul>
 </div>
 <section id="added">
@@ -571,22 +590,91 @@ their size from the image. Contribution by &#64;bd-pmorais.</p></li>
 <li><p>Added <code class="docutils literal notranslate"><span class="pre">reduce=&quot;sum&quot;</span></code> to <code class="docutils literal notranslate"><span class="pre">MetricsTermCfg</span></code> for reporting the accumulated
 episode total (e.g. episodic reward, total distance traveled) instead of a
 per-step average. Contribution by &#64;bd-mlutter</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">ViewerConfig.geom_group</span></code> and <code class="docutils literal notranslate"><span class="pre">ViewerConfig.site_group</span></code> to
+control which geom and site visualization groups the offscreen renderer
+draws. Defaults match MuJoCo’s (groups 0 through 2), so rendering is
+unchanged unless configured. Contribution by &#64;bd-mlutter.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">dr.mat_texid</span></code> to randomize which texture fills a given
+<code class="docutils literal notranslate"><span class="pre">mjtTextureRole</span></code> slot (RGB by default) of each selected material,
+sampling uniformly from <code class="docutils literal notranslate"><span class="pre">asset_cfg.texture_names</span></code>. Contribution by
+&#64;bd-pmorais.</p></li>
 </ul>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../_images/mat_texid_dr.gif"><img alt="../_images/mat_texid_dr.gif" src="../_images/mat_texid_dr.gif" style="width: 30%;" />
+</a>
+</figure>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
 <ul class="simple">
+<li><p>Bumped <code class="docutils literal notranslate"><span class="pre">mujoco</span></code> and <code class="docutils literal notranslate"><span class="pre">mujoco-warp</span></code> from 3.10 to 3.11, and regenerated the
+bundled MuJoCo type stubs.</p></li>
 <li><p>Bumped <code class="docutils literal notranslate"><span class="pre">rsl-rl-lib</span></code> from 5.4.0 to 5.4.2.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">CollisionCfg</span></code> and <code class="docutils literal notranslate"><span class="pre">GeomCfg</span></code> now share one write path, and mjlab warns
 when a <code class="docutils literal notranslate"><span class="pre">GeomCfg</span></code> collision patch is overwritten by a <code class="docutils literal notranslate"><span class="pre">CollisionCfg</span></code>.</p></li>
 <li><p>Changed the default MuJoCo Warp render background to solid black
 (<code class="docutils literal notranslate"><span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">1</span></code>), matching MuJoCo’s native renderer. Contribution by
 &#64;bd-pmorais.</p></li>
+<li><p>The offscreen renderer now works on a copy of the <code class="docutils literal notranslate"><span class="pre">MjModel</span></code>, so its
+render-only tweaks (extent, shadows, reflections, offscreen size) no
+longer leak into the shared model. Contribution by &#64;bd-mlutter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ViewerConfig</span></code> is now keyword-only, with fields grouped and documented.
+Contribution by &#64;bd-mlutter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ViewerConfig.fovy</span></code> now also applies to the <code class="docutils literal notranslate"><span class="pre">ASSET_ROOT</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ASSET_BODY</span></code> tracking cameras instead of being silently ignored; leave
+it at <code class="docutils literal notranslate"><span class="pre">None</span></code> (the default) to keep the model value. Contribution by
+&#64;bd-mlutter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auto_reset</span></code> and an explicit <code class="docutils literal notranslate"><span class="pre">reset()</span></code> now leave identical command and
+event timer state (<a class="extlink-issue reference external" href="https://github.com/mujocolab/mjlab/issues/1133">#1133</a>).</p></li>
 </ul>
 </section>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">#</a></h3>
 <ul class="simple">
+<li><p>The Viser motion scrubber’s Start Here button no longer computes relative
+body poses from stale pre-scrub kinematics, which could spuriously
+terminate the episode on the next step.</p></li>
+<li><p>Mid-episode lifting command resamples now refresh kinematics and the
+multi-cube reward cache, so observations and rewards no longer see
+pre-teleport object positions for one step after each resample.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">UniformVelocityCommand</span></code>’s <code class="docutils literal notranslate"><span class="pre">init_velocity_prob</span></code> path no longer writes
+the previous episode’s terminal pose back into the sim on reset. It read
+derived kinematics before <code class="docutils literal notranslate"><span class="pre">forward()</span></code> ran and rewrote the root pose; it
+now reads only qpos for the orientation and writes only the root velocity.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">init_velocity_prob</span></code> now applies on episode reset only. A mid-episode
+timer resample used to also teleport the root velocity, which ran after
+<code class="docutils literal notranslate"><span class="pre">step()</span></code>’s forward and left velocity observations stale for one step.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Entity.set_joint_position_target</span></code> and its velocity/effort/tendon/site
+siblings now select the outer product when both <code class="docutils literal notranslate"><span class="pre">env_ids</span></code> and the element
+ids are tensors, instead of pairing them elementwise.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MotionCommand</span></code> now refreshes kinematics after a timer-expiry resample
+(finite <code class="docutils literal notranslate"><span class="pre">resampling_time_range</span></code>), matching its wraparound path.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CircularBuffer</span></code> lag retrieval now clamps to the oldest retained frame;
+a lag beyond the buffer length used to wrap around to a newer frame.</p></li>
+<li><p>Camera sensor caches are now invalidated after <code class="docutils literal notranslate"><span class="pre">sense()</span></code>, so a
+pre-sense read with <code class="docutils literal notranslate"><span class="pre">clone_data=True</span></code> can no longer pin the previous
+step’s frame into the observations (mirrors the raycast fix for
+<a class="extlink-issue reference external" href="https://github.com/mujocolab/mjlab/issues/998">#998</a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reset(env_ids=...)</span></code> no longer appends a frame to every env’s observation
+history and delay buffers; only the reset envs receive their post-reset
+frame. Previously, each manual partial reset gave the other envs a duplicate
+frame, shortening their effective history and drifting their delay
+schedules.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reset(env_ids=...)</span></code> no longer advances stateful commands in
+environments that were not reset. Previously a partial reset gave every
+environment an extra command update, so with <code class="docutils literal notranslate"><span class="pre">auto_reset=False</span></code> a
+<code class="docutils literal notranslate"><span class="pre">MotionCommand</span></code> reference motion played at twice the normal speed and
+could teleport non-reset robots via the wraparound resample. The adaptive
+sampling EMA also no longer folds on resets, matching auto-reset
+training dynamics. <a class="extlink-issue reference external" href="https://github.com/mujocolab/mjlab/issues/1138">#1138</a></p></li>
+<li><p>Interval event timers are now resampled on episode reset for function-based
+terms, as documented. Previously the countdown carried across episodes, so a
+new episode’s first <code class="docutils literal notranslate"><span class="pre">push_robot</span></code> in the velocity and tracking tasks could
+fire arbitrarily soon after spawn; with mixed function and class interval
+terms, reset also wrote into the wrong timer slots. Note this changes push
+timing relative to earlier training runs, and an interval term whose range
+exceeds the episode length is now re-armed on every reset and will never
+fire.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">RayCastSensorCfg.include_geom_groups</span></code> now raises on values outside
 <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">mjNGROUP)</span></code> instead of silently excluding every geom.</p></li>
 <li><p>Geoms with a negative group no longer pick up group 5’s visibility toggle in
@@ -1549,7 +1637,8 @@ Contribution by <a class="reference external" href="https://github.com/oxkitsune
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upcoming-version-not-yet-released">Upcoming version (not yet released)</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upcoming-version-not-yet-released">Upcoming version (not yet released)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#version-1-6-0-august-8-2026">Version 1.6.0 (August 8, 2026)</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed">Changed</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
@@ -1640,7 +1729,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on Aug 05, 2026.
+  Last updated on Aug 27, 2026.
   <br/>
 </p>
   </div>
