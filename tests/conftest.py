@@ -69,6 +69,54 @@ def create_entity_with_actuator(xml_string: str, actuator_cfg):
   return Entity(cfg)
 
 
+class FakeSensorContext:
+  """Minimal RenderSensorContextProtocol backend for tests.
+
+  Wires camera sensors back to itself (as the real protocol requires) and
+  serves real zero-filled RGB tensors, so it can stand in for either a
+  registration/dispatch fake or a fake that must render through the
+  camera-sensor read path.
+  """
+
+  def __init__(self, mj_model, model, data, camera_sensors, raycast_sensors, device):
+    if len(raycast_sensors) > 0:
+      raise NotImplementedError(
+        "Not all sensor context backends support raycast sensors."
+      )
+    self.mj_model = mj_model
+    self.model = model
+    self.data = data
+    self.camera_sensors = camera_sensors
+    self.raycast_sensors = raycast_sensors
+    self.device = device
+    self.render_calls = 0
+    for sensor in camera_sensors:
+      sensor.set_context(self)
+
+  @property
+  def has_cameras(self) -> bool:
+    return bool(self.camera_sensors)
+
+  def render(self) -> None:
+    self.render_calls += 1
+
+  def get_rgb(self, cam_idx: int):
+    n = self.data.nworld
+    cam = next(c for c in self.camera_sensors if c.camera_idx == cam_idx)
+    return torch.zeros(
+      (n, cam.cfg.height, cam.cfg.width, 3), dtype=torch.uint8, device=self.device
+    )
+
+  def get_depth(self, cam_idx: int):
+    raise NotImplementedError
+
+  def get_segmentation(self, cam_idx: int):
+    raise NotImplementedError
+
+  def close(self) -> None:
+    pass
+
+
 def create_entity_from_fixture(fixture_name: str, actuator_cfg=None):
   """Create entity from fixture file.
 

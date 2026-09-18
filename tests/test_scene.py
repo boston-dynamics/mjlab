@@ -6,11 +6,14 @@ import mujoco
 import mujoco_warp as mjwarp
 import pytest
 import torch
-from conftest import get_test_device, load_fixture_xml
+from conftest import FakeSensorContext, get_test_device, load_fixture_xml
 
 from mjlab.actuator import BuiltinPositionActuatorCfg
 from mjlab.entity import Entity, EntityArticulationInfoCfg, EntityCfg
 from mjlab.scene import Scene, SceneCfg
+from mjlab.sensor import CameraSensorCfg, registry
+from mjlab.sensor.registry import register_sensor_context_backend
+from mjlab.sim.mujoco_sim import MujocoSimulation
 from mjlab.sim.sim import Simulation, SimulationCfg
 from mjlab.sim.sim_data import WarpBridge
 
@@ -23,6 +26,16 @@ from mjlab.sim.sim_data import WarpBridge
 def device():
   """Test device fixture."""
   return get_test_device()
+
+
+@pytest.fixture(autouse=True)
+def clean_sensor_context_registry():
+  """Isolate each test from the module-level sensor context registry."""
+  saved = dict(registry._SENSOR_CONTEXT_REGISTRY)
+  registry._SENSOR_CONTEXT_REGISTRY.clear()
+  yield
+  registry._SENSOR_CONTEXT_REGISTRY.clear()
+  registry._SENSOR_CONTEXT_REGISTRY.update(saved)
 
 
 @pytest.fixture
@@ -595,3 +608,87 @@ def test_entity_with_option_flags_warns(device):
   )
   with pytest.warns(UserWarning, match="disableflags"):
     Scene(cfg, device)
+
+
+# ============================================================================
+# Render Backend Tests
+# ============================================================================
+
+_SCENE_WITH_CAMERA_XML = """
+  <mujoco>
+    <worldbody>
+      <light pos="0 0 3" dir="0 0 -1"/>
+      <geom name="floor" type="plane" size="10 10 0.1" pos="0 0 0"/>
+      <camera name="overhead_cam" pos="0 0 3" quat="1 0 0 0"
+              fovy="45" resolution="32 24"/>
+    </worldbody>
+  </mujoco>
+"""
+
+
+def _camera_scene_cfg() -> SceneCfg:
+  entity_cfg = EntityCfg(
+    spec_fn=lambda: mujoco.MjSpec.from_string(_SCENE_WITH_CAMERA_XML)
+  )
+  camera_cfg = CameraSensorCfg(
+    name="cam", camera_name="world/overhead_cam", width=8, height=8
+  )
+  return SceneCfg(
+    num_envs=1,
+    entities={"world": entity_cfg},
+    sensors=(camera_cfg,),
+  )
+
+
+def test_custom_sensor_context_backend_selected_for_mujoco_backend(device):
+  """A registered sensor context backend is used for the MuJoCo simulation backend."""
+  register_sensor_context_backend("fake", FakeSensorContext)
+  scene = Scene(_camera_scene_cfg(), device)
+  sim = MujocoSimulation(
+    num_envs=1, cfg=SimulationCfg(backend="mujoco"), spec=scene.spec, device=device
+  )
+  scene.initialize(
+    sim.mj_model,
+    sim.model,  # type: ignore[arg-type]
+    sim.data,  # type: ignore[arg-type]
+    sensor_context_backend="fake",
+  )
+  assert isinstance(scene.sensor_context, FakeSensorContext)
+
+
+def test_custom_sensor_context_backend_selected_for_mjwarp_backend(device):
+  """A registered sensor context backend is also usable on the mjwarp backend."""
+  register_sensor_context_backend("fake", FakeSensorContext)
+  scene = Scene(_camera_scene_cfg(), device)
+  sim = Simulation(
+    num_envs=1, cfg=SimulationCfg(backend="mjwarp"), spec=scene.spec, device=device
+  )
+  scene.initialize(
+    sim.mj_model,
+    sim.model,
+    sim.data,
+    sensor_context_backend="fake",
+  )
+  assert isinstance(scene.sensor_context, FakeSensorContext)
+
+
+def test_sensor_context_backend_with_mjwarp_and_no_sensors_is_noop(
+  minimal_scene_cfg, device
+):
+  """sensor_context_backend + mjwarp with no camera/raycast sensors is a no-op.
+
+  Mirrors the MuJoCo backend's behavior: a configured backend name only
+  matters once there's a sensor that needs a context.
+  """
+  register_sensor_context_backend("fake", FakeSensorContext)
+  scene = Scene(minimal_scene_cfg, device)
+  sim = Simulation(
+    num_envs=1, cfg=SimulationCfg(backend="mjwarp"), spec=scene.spec, device=device
+  )
+  scene.initialize(
+    sim.mj_model,
+    sim.model,
+    sim.data,
+    sensor_context_backend="fake",
+  )
+  assert scene.sensor_context is None

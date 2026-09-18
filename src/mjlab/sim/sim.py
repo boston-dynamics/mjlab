@@ -13,6 +13,7 @@ import warp as wp
 
 from mjlab.entity.variants import VARIANT_DEPENDENT_FIELDS, build_variant_model
 from mjlab.managers.event_manager import RecomputeLevel
+from mjlab.sensor.sensor_context import SensorContext
 from mjlab.sim.randomization import expand_model_fields
 from mjlab.sim.sim_data import TorchArray, WarpBridge
 from mjlab.utils.nan_guard import NanGuard, NanGuardCfg
@@ -20,7 +21,7 @@ from mjlab.utils.nan_guard import NanGuard, NanGuardCfg
 if TYPE_CHECKING:
   from mjlab.entity.variants import VariantMetadata
   from mjlab.envs.manager_based_rl_env import ManagerBasedRlEnvCfg
-  from mjlab.sensor.sensor_context import SensorContext
+  from mjlab.sensor.interface import RenderSensorContextProtocol
 
   # Type aliases for better IDE support while maintaining runtime compatibility
   # At runtime, WarpBridge wraps the actual MJWarp objects.
@@ -157,6 +158,13 @@ class SimulationCfg:
   # The built-in backends are "mjwarp", "mujoco", and "mujoco_with_kinematics".
   # Additional backends may be registered via `mjlab.sim.register_simulation_backend`.
   backend: str = "mjwarp"
+  sensor_context_backend: str | None = None
+  """Sensor context backend used for camera sensors.
+
+  If ``None``, the default context for the active simulation backend is
+  used. Otherwise, the name is used as a key to fetch a backend from the
+  sensor backend registry.
+  """
   nconmax: int | None = None
   """Number of contacts to allocate per world.
 
@@ -340,7 +348,7 @@ class Simulation:
 
     self._model_bridge = WarpBridge(self._wp_model, nworld=self.num_envs)
     self._data_bridge = WarpBridge(self._wp_data)
-    self._sensor_context: SensorContext | None = None
+    self._sensor_context: SensorContext | RenderSensorContextProtocol | None = None
 
     self.use_cuda_graph = self._should_use_cuda_graph()
     self.create_graph()
@@ -376,7 +384,7 @@ class Simulation:
         with wp.ScopedCapture() as capture:
           mjwarp.reset_data(self.wp_model, self.wp_data, reset=self._reset_mask_wp)
         self.reset_graph = capture.graph
-        if self._sensor_context is not None:
+        if isinstance(self._sensor_context, SensorContext):
           with wp.ScopedCapture() as capture:
             self._sense_kernel()
           self.sense_graph = capture.graph
@@ -447,7 +455,7 @@ class Simulation:
     self._expanded_fields.update(fields)
     self._model_bridge.clear_cache()
 
-    if self._sensor_context is not None:
+    if isinstance(self._sensor_context, SensorContext):
       self._sensor_context.recreate(self._mj_model, self._expanded_fields)
 
     # Field expansion allocates new arrays and replaces them via setattr. The
@@ -513,26 +521,35 @@ class Simulation:
       else:
         mjwarp.reset_data(self.wp_model, self.wp_data, reset=self._reset_mask_wp)
 
-  def set_sensor_context(self, ctx: SensorContext) -> None:
-    """Wire a SensorContext for camera/raycast sensing.
+  def set_sensor_context(
+    self, ctx: SensorContext | RenderSensorContextProtocol
+  ) -> None:
+    """Wire a sensor context for camera/raycast sensing.
 
-    Automatically re-captures CUDA graphs so the sense_graph includes
-    the new sensor kernels.
+    Automatically re-captures CUDA graphs so a native ``SensorContext``'s sense_graph
+    includes the new sensor kernels.
     """
     self._sensor_context = ctx
     self.create_graph()
 
   def sense(self) -> None:
-    """Execute the sense pipeline: prepare -> graph -> finalize.
+    """Execute the sense pipeline.
 
-    Runs BVH refit, camera rendering, and raycasting in a single
-    CUDA graph launch. Should be called once per env step, right
-    before observation computation.
+    For the native mjwarp ``SensorContext``: prepare -> graph/kernel ->
+    finalize, running BVH refit, camera rendering, and raycasting in a
+    single CUDA graph launch when available. For a custom
+    ``RenderSensorContextProtocol`` backend: calls ``render()``
+    directly on the CPU; this path is never CUDA-graph-captured. Should be
+    called once per env step, right before observation computation.
     """
-    if self._sensor_context is None:
+    ctx = self._sensor_context
+    if ctx is None:
       return
 
-    ctx = self._sensor_context
+    if not isinstance(ctx, SensorContext):
+      ctx.render()
+      return
+
     ctx.prepare()
 
     with wp.ScopedDevice(self.wp_device):
@@ -547,7 +564,7 @@ class Simulation:
 
   def _sense_kernel(self) -> None:
     """GPU kernel sequence for sensing (captured in sense_graph)."""
-    assert self._sensor_context is not None
+    assert isinstance(self._sensor_context, SensorContext)
     ctx = self._sensor_context
     rc = ctx.render_context
 
