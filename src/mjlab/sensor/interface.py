@@ -79,3 +79,17 @@ class RenderSensorContextProtocol(Protocol):
   def close(self) -> None:
     """Release backend resources (e.g. EGL/GL contexts)."""
     ...
+
+
+if TYPE_CHECKING:
+  # Static conformance check: each concrete backend must satisfy the
+  # protocol. These assignments fail type checking if a backend's public
+  # surface drifts from the interface above. Never executed at runtime.
+  from mjlab.sensor.mujoco_sensor_context import MujocoSensorContext
+  from mjlab.sensor.rgb_mujoco_sensor_context import RgbMujocoSensorContext
+
+  def _assert_backends_conform(
+    mujoco_ctx: RgbMujocoSensorContext, legacy_ctx: MujocoSensorContext
+  ) -> None:
+    _mujoco: RenderSensorContextProtocol = mujoco_ctx
+    _legacy: RenderSensorContextProtocol = legacy_ctx

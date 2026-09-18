@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from mjlab.sensor.mujoco_sensor_context import MujocoSensorContext
+from mjlab.sensor.rgb_mujoco_sensor_context import RgbMujocoSensorContext
 from mjlab.sensor.sensor_context import SensorContext
 
 if TYPE_CHECKING:
@@ -12,13 +14,21 @@ if TYPE_CHECKING:
 
 # Names of the built-in sensor context backends. These names cannot be used
 # for externally-registered sensor context backends.
+SENSOR_CONTEXT_MUJOCO = "mujoco"
+SENSOR_CONTEXT_MUJOCO_FULL = "mujoco-full"
 SENSOR_CONTEXT_MJWARP = "mjwarp"
-BUILTIN_SENSOR_CONTEXTS = (SENSOR_CONTEXT_MJWARP,)
+BUILTIN_SENSOR_CONTEXTS = (
+  SENSOR_CONTEXT_MUJOCO,
+  SENSOR_CONTEXT_MUJOCO_FULL,
+  SENSOR_CONTEXT_MJWARP,
+)
 
 
 _SENSOR_CONTEXT_REGISTRY: dict[
   str, type[SensorContext | RenderSensorContextProtocol]
 ] = {
+  SENSOR_CONTEXT_MUJOCO: RgbMujocoSensorContext,
+  SENSOR_CONTEXT_MUJOCO_FULL: MujocoSensorContext,
   SENSOR_CONTEXT_MJWARP: SensorContext,
 }
 

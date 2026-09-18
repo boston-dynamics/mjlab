@@ -1,7 +1,15 @@
 """Shared test fixtures and utilities."""
 
 import os
+import sys
 from pathlib import Path
+
+# Must be set before any mujoco import: mujoco's gl_context module captures
+# MUJOCO_GL once at load time. mjlab/__init__.py sets the same default, but
+# that only takes effect if mjlab is imported before mujoco, which isn't
+# guaranteed here.
+if sys.platform.startswith("linux"):
+  os.environ.setdefault("MUJOCO_GL", "egl")
 
 import mujoco
 import pytest
@@ -10,6 +18,7 @@ import warp as wp
 
 from mjlab.entity import Entity, EntityArticulationInfoCfg, EntityCfg
 from mjlab.scene import Scene, SceneCfg
+from mjlab.sim.mujoco_sim import MujocoSimulation
 from mjlab.sim.sim import Simulation, SimulationCfg
 
 
@@ -183,6 +192,61 @@ def make_scene_and_sim(
   scene.initialize(sim.mj_model, sim.model, sim.data)
   if scene.sensor_context is not None:
     sim.set_sensor_context(scene.sensor_context)
+  return scene, sim
+
+
+MUJOCO_CAMERA_SCENE_XML = """
+  <mujoco>
+    <worldbody>
+      <light pos="0 0 3" dir="0 0 -1"/>
+      <geom name="floor" type="plane" size="10 10 0.1" pos="0 0 0"
+            rgba="0.5 0.5 0.5 1"/>
+      <geom name="red_box" type="box" size="0.5 0.5 0.5" pos="0 0 0.5"
+            rgba="1 0 0 1"/>
+      <camera name="overhead_cam" pos="0 0 3" quat="1 0 0 0"
+              fovy="45" resolution="32 24"/>
+    </worldbody>
+  </mujoco>
+"""
+
+
+def make_mujoco_camera_scene_and_sim(
+  sensors: tuple,
+  device: str | None = None,
+  xml: str = MUJOCO_CAMERA_SCENE_XML,
+  num_envs: int = 2,
+  sensor_context_backend: str | None = None,
+) -> tuple[Scene, MujocoSimulation]:
+  """Create a mujoco-backend Scene + MujocoSimulation with camera sensors wired up.
+
+  Shared by test_mujoco_camera_sensor.py (default ``"mujoco"`` sensor
+  context backend) and test_mujoco_camera_sensor_rgb_depth_seg.py
+  (``"mujoco-full"`` backend).
+  """
+  if device is None:
+    device = get_test_device()
+  entity_cfg = EntityCfg(spec_fn=lambda: mujoco.MjSpec.from_string(xml))
+  scene_cfg = SceneCfg(
+    num_envs=num_envs,
+    env_spacing=5.0,
+    entities={"world": entity_cfg},
+    sensors=sensors,
+  )
+  scene = Scene(scene_cfg, device)
+  sim = MujocoSimulation(
+    num_envs=num_envs,
+    cfg=SimulationCfg(backend="mujoco"),
+    spec=scene.spec,
+    device=device,
+  )
+  scene.initialize(
+    sim.mj_model,
+    sim.model,  # type: ignore[arg-type]
+    sim.data,  # type: ignore[arg-type]
+    sensor_context_backend=sensor_context_backend,
+  )
+  if scene.sensor_context is not None:
+    sim.set_sensor_context(scene.sensor_context)  # type: ignore[arg-type]
   return scene, sim
 
 

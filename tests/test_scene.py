@@ -32,7 +32,6 @@ def device():
 def clean_sensor_context_registry():
   """Isolate each test from the module-level sensor context registry."""
   saved = dict(registry._SENSOR_CONTEXT_REGISTRY)
-  registry._SENSOR_CONTEXT_REGISTRY.clear()
   yield
   registry._SENSOR_CONTEXT_REGISTRY.clear()
   registry._SENSOR_CONTEXT_REGISTRY.update(saved)

@@ -15,6 +15,7 @@ from mjlab.entity.variants import VariantMetadata
 from mjlab.sensor import BuiltinSensor, RayCastSensor, Sensor, SensorCfg
 from mjlab.sensor.camera_sensor import CameraSensor
 from mjlab.sensor.registry import get_sensor_context_backend
+from mjlab.sensor.rgb_mujoco_sensor_context import RgbMujocoSensorContext
 from mjlab.sensor.sensor_context import SensorContext
 from mjlab.terrains.terrain_entity import TerrainEntity, TerrainEntityCfg
 from mjlab.utils.spec import export_spec, non_default_option_fields
@@ -189,7 +190,14 @@ class Scene:
     if sensor_context_backend is not None:
       sensor_context_cls = get_sensor_context_backend(sensor_context_backend)
     else:
-      sensor_context_cls = SensorContext
+      # Lazy import: mjlab.sim transitively imports scene via the managers
+      # subpackage, so a module-level import would cycle.
+      from mjlab.sim.mujoco_sim import MujocoSimData
+
+      if isinstance(data, MujocoSimData):
+        sensor_context_cls = RgbMujocoSensorContext
+      else:
+        sensor_context_cls = SensorContext
 
     self._sensor_context = sensor_context_cls(
       mj_model=mj_model,

@@ -13,7 +13,6 @@ from mjlab.sensor.registry import (
 def clean_registry():
   """Isolate each test from the module-level sensor context registry."""
   saved = dict(registry._SENSOR_CONTEXT_REGISTRY)
-  registry._SENSOR_CONTEXT_REGISTRY.clear()
   yield
   registry._SENSOR_CONTEXT_REGISTRY.clear()
   registry._SENSOR_CONTEXT_REGISTRY.update(saved)
@@ -36,6 +35,12 @@ def test_register_idempotent_same_class():
   register_sensor_context_backend("one", BackendOne)
   register_sensor_context_backend("one", BackendOne)
   assert get_sensor_context_backend("one") is BackendOne
+
+
+@pytest.mark.parametrize("name", ["mujoco", "mujoco-full"])
+def test_register_builtin_name_raises(name):
+  with pytest.raises(ValueError):  # Fails due to conflict with bultin name
+    register_sensor_context_backend(name, BackendOne)
 
 
 def test_register_conflicting_class_raises():
