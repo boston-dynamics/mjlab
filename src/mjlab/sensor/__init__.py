@@ -8,6 +8,9 @@ from mjlab.sensor.contact_sensor import ContactData as ContactData
 from mjlab.sensor.contact_sensor import ContactMatch as ContactMatch
 from mjlab.sensor.contact_sensor import ContactSensor as ContactSensor
 from mjlab.sensor.contact_sensor import ContactSensorCfg as ContactSensorCfg
+from mjlab.sensor.interface import (
+  RenderSensorContextProtocol as RenderSensorContextProtocol,
+)
 from mjlab.sensor.raycast_sensor import GridPatternCfg as GridPatternCfg
 from mjlab.sensor.raycast_sensor import (
   PinholeCameraPatternCfg as PinholeCameraPatternCfg,
@@ -16,6 +19,12 @@ from mjlab.sensor.raycast_sensor import RayCastData as RayCastData
 from mjlab.sensor.raycast_sensor import RayCastSensor as RayCastSensor
 from mjlab.sensor.raycast_sensor import RayCastSensorCfg as RayCastSensorCfg
 from mjlab.sensor.raycast_sensor import RingPatternCfg as RingPatternCfg
+from mjlab.sensor.registry import (
+  get_sensor_context_backend as get_sensor_context_backend,
+)
+from mjlab.sensor.registry import (
+  register_sensor_context_backend as register_sensor_context_backend,
+)
 from mjlab.sensor.sensor import Sensor as Sensor
 from mjlab.sensor.sensor import SensorCfg as SensorCfg
 from mjlab.sensor.sensor_context import SensorContext as SensorContext

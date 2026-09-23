@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import mujoco
 import mujoco_warp as mjwarp
@@ -14,9 +14,14 @@ from mjlab.entity import Entity, EntityCfg
 from mjlab.entity.variants import VariantMetadata
 from mjlab.sensor import BuiltinSensor, RayCastSensor, Sensor, SensorCfg
 from mjlab.sensor.camera_sensor import CameraSensor
+from mjlab.sensor.registry import get_sensor_context_backend
+from mjlab.sensor.rgb_mujoco_sensor_context import RgbMujocoSensorContext
 from mjlab.sensor.sensor_context import SensorContext
 from mjlab.terrains.terrain_entity import TerrainEntity, TerrainEntityCfg
 from mjlab.utils.spec import export_spec, non_default_option_fields
+
+if TYPE_CHECKING:
+  from mjlab.sensor.interface import RenderSensorContextProtocol
 
 _SCENE_XML = Path(__file__).parent / "scene.xml"
 
@@ -57,7 +62,7 @@ class Scene:
     self._sensors: dict[str, Sensor] = {}
     self._terrain: TerrainEntity | None = None
     self._default_env_origins: torch.Tensor | None = None
-    self._sensor_context: SensorContext | None = None
+    self._sensor_context: SensorContext | RenderSensorContextProtocol | None = None
 
     self._spec = mujoco.MjSpec.from_file(str(_SCENE_XML))
     if self._cfg.extent is not None:
@@ -155,7 +160,7 @@ class Scene:
   # Methods.
 
   @property
-  def sensor_context(self) -> SensorContext | None:
+  def sensor_context(self) -> SensorContext | RenderSensorContextProtocol | None:
     """Shared sensing resources, or None if no cameras/raycasts."""
     return self._sensor_context
 
@@ -164,6 +169,7 @@ class Scene:
     mj_model: mujoco.MjModel,
     model: mjwarp.Model,
     data: mjwarp.Data,
+    sensor_context_backend: str | None = None,
   ):
     self._default_env_origins = torch.zeros(
       (self._cfg.num_envs, 3), device=self._device, dtype=torch.float32
@@ -173,19 +179,34 @@ class Scene:
     for sensor in self._sensors.values():
       sensor.initialize(mj_model, model, data, self._device)
 
-    # Create SensorContext if any sensors require it.
+    # Create the appropriate sensor context if any sensors require it.
     ctx_sensors = [s for s in self._sensors.values() if s.requires_sensor_context]
-    if ctx_sensors:
-      camera_sensors = [s for s in ctx_sensors if isinstance(s, CameraSensor)]
-      raycast_sensors = [s for s in ctx_sensors if isinstance(s, RayCastSensor)]
-      self._sensor_context = SensorContext(
-        mj_model=mj_model,
-        model=model,
-        data=data,
-        camera_sensors=camera_sensors,
-        raycast_sensors=raycast_sensors,
-        device=self._device,
-      )
+    if not ctx_sensors:
+      return
+
+    camera_sensors = [s for s in ctx_sensors if isinstance(s, CameraSensor)]
+    raycast_sensors = [s for s in ctx_sensors if isinstance(s, RayCastSensor)]
+
+    if sensor_context_backend is not None:
+      sensor_context_cls = get_sensor_context_backend(sensor_context_backend)
+    else:
+      # Lazy import: mjlab.sim transitively imports scene via the managers
+      # subpackage, so a module-level import would cycle.
+      from mjlab.sim.mujoco_sim import MujocoSimData
+
+      if isinstance(data, MujocoSimData):
+        sensor_context_cls = RgbMujocoSensorContext
+      else:
+        sensor_context_cls = SensorContext
+
+    self._sensor_context = sensor_context_cls(
+      mj_model=mj_model,
+      model=model,
+      data=data,
+      camera_sensors=camera_sensors,
+      raycast_sensors=raycast_sensors,
+      device=self._device,
+    )
 
   def reset(self, env_ids: torch.Tensor | slice | None = None) -> None:
     for ent in self._entities.values():

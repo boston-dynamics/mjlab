@@ -386,8 +386,6 @@ class ViserPlayViewer(BaseViewer):
     if self._camera_overlays and self._should_update_cameras(
       self._is_paused, has_pending_updates
     ):
-      if isinstance(sim, MujocoSimulation):
-        raise NotImplementedError("Cameras not yet implemented for MuJoCo backend")
       self._camera_overlays.update(
         sim.data, self._scene.env_idx, self._scene._scene_offset
       )

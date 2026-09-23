@@ -17,6 +17,7 @@ from mjlab.sim.sim import SimulationCfg
 
 if TYPE_CHECKING:
   from mjlab.envs.manager_based_rl_env import ManagerBasedRlEnvCfg
+  from mjlab.sensor.interface import RenderSensorContextProtocol
 
 
 @dataclass
@@ -155,7 +156,6 @@ class MujocoBridgeAuxStruct:
     self._field_cache: dict[str, Any] = {}
 
   def __getattr__(self, name: str) -> Any:
-
     if name not in self._field_cache:
       attr = getattr(self._aux_struct, name)
       if isinstance(attr, np.ndarray):
@@ -423,6 +423,8 @@ class MujocoSimulation:
     self._rollout = mujoco.rollout.Rollout(nthread=nthread)
     self._thread_data = [mujoco.MjData(mj_model) for _ in range(nthread)]
 
+    self._sensor_context: RenderSensorContextProtocol | None = None
+
     # Pre-allocated float64 numpy buffers for mujoco.rollout (always CPU).
     self._state_buf = np.zeros((num_envs, self._nstate), dtype=np.float64)
     self._ctrl_buf = np.zeros((num_envs, 1, _ncontrol), dtype=np.float64)
@@ -568,10 +570,23 @@ class MujocoSimulation:
       self._data.mocap_quat[env_ids] = self._default_mocap_quat[env_ids]
 
   def sense(self) -> None:
-    """No-op: sensordata is populated by rollout during step()."""
+    """Render all camera sensors via the attached sensor context.
 
-  def set_sensor_context(self, ctx: object) -> None:
-    """No-op: no GPU sensor context for the MuJoCo backend."""
+    Non-camera sensordata is populated by mujoco.rollout during step(); this
+    method only drives camera rendering. No-op when no context is attached.
+    """
+    if self._sensor_context is not None:
+      self._sensor_context.render()
+
+  def set_sensor_context(self, ctx: RenderSensorContextProtocol | None) -> None:
+    """Attach a sensor context/render backend (or detach by passing None)."""
+    self._sensor_context = ctx
+
+  def close(self) -> None:
+    """Release simulation resources, including any attached sensor context."""
+    if self._sensor_context is not None:
+      self._sensor_context.close()
+      self._sensor_context = None
 
   def expand_model_fields(self, fields: tuple[str, ...]) -> None:
     """Expand model to per-env copies, enabling per-env domain randomization.

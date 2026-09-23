@@ -115,6 +115,9 @@ class ViserCameraViewer:
         self._frustum_handle = None
       return
 
+    if not hasattr(sim_data, "cam_xpos"):
+      return
+
     # Get camera pose from simulation data
     cam_id = self._camera_idx
     cam_pos = sim_data.cam_xpos[env_idx, cam_id].cpu().numpy() + scene_offset
