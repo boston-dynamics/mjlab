@@ -5,11 +5,12 @@ from __future__ import annotations
 import mujoco
 import pytest
 import torch
-from conftest import get_test_device
+from conftest import FakeSensorContext, get_test_device
 
 from mjlab.entity import EntityCfg
 from mjlab.scene import Scene, SceneCfg
 from mjlab.sensor import CameraSensorCfg, CameraSensorData
+from mjlab.sensor.registry import register_sensor_context_backend
 from mjlab.sim.sim import Simulation, SimulationCfg
 
 
@@ -284,13 +285,13 @@ def test_expand_cam_intrinsic_disables_precomputed_rays(device):
   assert scene.sensor_context is not None
 
   # Before expansion: precomputed rays enabled.
-  rc = scene.sensor_context.render_context
+  rc = scene.sensor_context.render_context  # type: ignore[union-attr]
   assert rc.use_precomputed_rays is True
 
   sim.expand_model_fields(("cam_intrinsic",))
 
   # After expansion: precomputed rays disabled.
-  rc = scene.sensor_context.render_context
+  rc = scene.sensor_context.render_context  # type: ignore[union-attr]
   assert rc.use_precomputed_rays is False
 
 
@@ -435,5 +436,39 @@ def test_camera_create_on_parent_body(device):
   data = scene["wrist_cam"].data
 
   assert isinstance(data, CameraSensorData)
+  assert data.rgb is not None
+  assert data.rgb.shape == (2, 12, 16, 3)
+
+
+def test_custom_render_backend_on_mjwarp_calls_render_without_graph(device):
+  """A registered custom backend on mjwarp is called directly, bypassing the graph."""
+  register_sensor_context_backend("fake_cpu", FakeSensorContext)
+  cam_cfg = CameraSensorCfg(
+    name="test_cam",
+    camera_name="world/overhead_cam",
+    width=16,
+    height=12,
+    data_types=("rgb",),
+  )
+  entity_cfg = EntityCfg(
+    spec_fn=lambda: mujoco.MjSpec.from_string(SCENE_WITH_CAMERA_XML)
+  )
+  scene_cfg = SceneCfg(
+    num_envs=2, env_spacing=5.0, entities={"world": entity_cfg}, sensors=(cam_cfg,)
+  )
+  scene = Scene(scene_cfg, device)
+  model = scene.compile()
+  sim = Simulation(num_envs=2, cfg=SimulationCfg(), model=model, device=device)
+  scene.initialize(sim.mj_model, sim.model, sim.data, sensor_context_backend="fake_cpu")
+  assert isinstance(scene.sensor_context, FakeSensorContext)
+  sim.set_sensor_context(scene.sensor_context)
+
+  assert sim.sense_graph is None
+
+  sim.forward()
+  sim.sense()
+
+  assert scene.sensor_context.render_calls == 1
+  data = scene["test_cam"].data
   assert data.rgb is not None
   assert data.rgb.shape == (2, 12, 16, 3)

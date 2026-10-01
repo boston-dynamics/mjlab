@@ -240,6 +240,7 @@ class ManagerBasedRlEnv:
       mj_model=self.sim.mj_model,
       model=self.sim.model,  # type: ignore[arg-type]
       data=self.sim.data,  # type: ignore[arg-type]
+      sensor_context_backend=self.cfg.sim.sensor_context_backend,
     )
 
     # Apply any necessary corrections to the model for compatibility with the simulation backend.
@@ -247,7 +248,7 @@ class ManagerBasedRlEnv:
 
     # Wire sensor context to simulation for sense_graph.
     if self.scene.sensor_context is not None:
-      self.sim.set_sensor_context(self.scene.sensor_context)
+      self.sim.set_sensor_context(self.scene.sensor_context)  # type: ignore[arg-type]
 
     # Print environment info.
     print_info("")
@@ -564,6 +565,8 @@ class ManagerBasedRlEnv:
     if self._offline_renderer is not None:
       self._offline_renderer.close()
     self.recorder_manager.close()
+    if isinstance(self.sim, MujocoSimulation):
+      self.sim.close()
 
   @staticmethod
   def seed(seed: int = -1) -> int:

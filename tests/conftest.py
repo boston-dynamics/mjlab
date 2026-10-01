@@ -1,7 +1,15 @@
 """Shared test fixtures and utilities."""
 
 import os
+import sys
 from pathlib import Path
+
+# Must be set before any mujoco import: mujoco's gl_context module captures
+# MUJOCO_GL once at load time. mjlab/__init__.py sets the same default, but
+# that only takes effect if mjlab is imported before mujoco, which isn't
+# guaranteed here.
+if sys.platform.startswith("linux"):
+  os.environ.setdefault("MUJOCO_GL", "egl")
 
 import mujoco
 import pytest
@@ -10,6 +18,7 @@ import warp as wp
 
 from mjlab.entity import Entity, EntityArticulationInfoCfg, EntityCfg
 from mjlab.scene import Scene, SceneCfg
+from mjlab.sim.mujoco_sim import MujocoSimulation
 from mjlab.sim.sim import Simulation, SimulationCfg
 
 
@@ -67,6 +76,54 @@ def create_entity_with_actuator(xml_string: str, actuator_cfg):
     articulation=EntityArticulationInfoCfg(actuators=(actuator_cfg,)),
   )
   return Entity(cfg)
+
+
+class FakeSensorContext:
+  """Minimal RenderSensorContextProtocol backend for tests.
+
+  Wires camera sensors back to itself (as the real protocol requires) and
+  serves real zero-filled RGB tensors, so it can stand in for either a
+  registration/dispatch fake or a fake that must render through the
+  camera-sensor read path.
+  """
+
+  def __init__(self, mj_model, model, data, camera_sensors, raycast_sensors, device):
+    if len(raycast_sensors) > 0:
+      raise NotImplementedError(
+        "Not all sensor context backends support raycast sensors."
+      )
+    self.mj_model = mj_model
+    self.model = model
+    self.data = data
+    self.camera_sensors = camera_sensors
+    self.raycast_sensors = raycast_sensors
+    self.device = device
+    self.render_calls = 0
+    for sensor in camera_sensors:
+      sensor.set_context(self)
+
+  @property
+  def has_cameras(self) -> bool:
+    return bool(self.camera_sensors)
+
+  def render(self) -> None:
+    self.render_calls += 1
+
+  def get_rgb(self, cam_idx: int):
+    n = self.data.nworld
+    cam = next(c for c in self.camera_sensors if c.camera_idx == cam_idx)
+    return torch.zeros(
+      (n, cam.cfg.height, cam.cfg.width, 3), dtype=torch.uint8, device=self.device
+    )
+
+  def get_depth(self, cam_idx: int):
+    raise NotImplementedError
+
+  def get_segmentation(self, cam_idx: int):
+    raise NotImplementedError
+
+  def close(self) -> None:
+    pass
 
 
 def create_entity_from_fixture(fixture_name: str, actuator_cfg=None):
@@ -135,6 +192,61 @@ def make_scene_and_sim(
   scene.initialize(sim.mj_model, sim.model, sim.data)
   if scene.sensor_context is not None:
     sim.set_sensor_context(scene.sensor_context)
+  return scene, sim
+
+
+MUJOCO_CAMERA_SCENE_XML = """
+  <mujoco>
+    <worldbody>
+      <light pos="0 0 3" dir="0 0 -1"/>
+      <geom name="floor" type="plane" size="10 10 0.1" pos="0 0 0"
+            rgba="0.5 0.5 0.5 1"/>
+      <geom name="red_box" type="box" size="0.5 0.5 0.5" pos="0 0 0.5"
+            rgba="1 0 0 1"/>
+      <camera name="overhead_cam" pos="0 0 3" quat="1 0 0 0"
+              fovy="45" resolution="32 24"/>
+    </worldbody>
+  </mujoco>
+"""
+
+
+def make_mujoco_camera_scene_and_sim(
+  sensors: tuple,
+  device: str | None = None,
+  xml: str = MUJOCO_CAMERA_SCENE_XML,
+  num_envs: int = 2,
+  sensor_context_backend: str | None = None,
+) -> tuple[Scene, MujocoSimulation]:
+  """Create a mujoco-backend Scene + MujocoSimulation with camera sensors wired up.
+
+  Shared by test_mujoco_camera_sensor.py (default ``"mujoco"`` sensor
+  context backend) and test_mujoco_camera_sensor_rgb_depth_seg.py
+  (``"mujoco-full"`` backend).
+  """
+  if device is None:
+    device = get_test_device()
+  entity_cfg = EntityCfg(spec_fn=lambda: mujoco.MjSpec.from_string(xml))
+  scene_cfg = SceneCfg(
+    num_envs=num_envs,
+    env_spacing=5.0,
+    entities={"world": entity_cfg},
+    sensors=sensors,
+  )
+  scene = Scene(scene_cfg, device)
+  sim = MujocoSimulation(
+    num_envs=num_envs,
+    cfg=SimulationCfg(backend="mujoco"),
+    spec=scene.spec,
+    device=device,
+  )
+  scene.initialize(
+    sim.mj_model,
+    sim.model,  # type: ignore[arg-type]
+    sim.data,  # type: ignore[arg-type]
+    sensor_context_backend=sensor_context_backend,
+  )
+  if scene.sensor_context is not None:
+    sim.set_sensor_context(scene.sensor_context)  # type: ignore[arg-type]
   return scene, sim
 
 

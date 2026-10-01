@@ -13,6 +13,7 @@ from mjlab.entity import Entity
 from mjlab.sensor.sensor import Sensor, SensorCfg
 
 if TYPE_CHECKING:
+  from mjlab.sensor.interface import RenderSensorContextProtocol
   from mjlab.sensor.sensor_context import SensorContext
 
 CameraDataType = Literal["rgb", "depth", "segmentation"]
@@ -141,7 +142,7 @@ class CameraSensor(Sensor[CameraSensorData]):
     self.cfg = cfg
     self._camera_name = cfg.camera_name if cfg.camera_name is not None else cfg.name
     self._is_wrapping_existing = cfg.camera_name is not None
-    self._ctx: SensorContext | None = None
+    self._ctx: SensorContext | RenderSensorContextProtocol | None = None
     self._camera_idx: int = -1
 
   @property
@@ -205,7 +206,7 @@ class CameraSensor(Sensor[CameraSensorData]):
         f"Camera '{self._camera_name}' not found in model. Available: {available}"
       ) from e
 
-  def set_context(self, ctx: SensorContext) -> None:
+  def set_context(self, ctx: SensorContext | RenderSensorContextProtocol) -> None:
     self._ctx = ctx
 
   def _compute_data(self) -> CameraSensorData:
